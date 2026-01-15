@@ -1,7 +1,16 @@
+function Player(name) {
+    return {name}
+}
+
+const p1 = Player("luis")
+const p2 = Player("manuel")
+
 const GameController = (function() {
     let gameboard = [" ", " ", " ",
-                       " ", " ", " ",
-                       " ", " ", " "];
+                     " ", " ", " ",
+                     " ", " ", " "];
+
+    let activePlayer = p1
 
     // legacy                       
     const displayBoard = () => {
@@ -16,50 +25,24 @@ const GameController = (function() {
         }
     }
 
-    const checkWin = (p1, p2) => {
+    const checkWin = () => {
 
-        // check row win X
-        if (gameboard[0] == "X" && gameboard[1] == "X" && gameboard[2] == "X" ||
-            gameboard[3] == "X" && gameboard[4] == "X" && gameboard[5] == "X" ||
-            gameboard[6] == "X" && gameboard[7] == "X" && gameboard[8] == "X" ) {
+        // Lógica de vitória 
+        const wins = [
+            [0,1,2], [3,4,5], [6,7,8], // Linhas
+            [0,3,6], [1,4,7], [2,5,8], // Colunas
+            [0,4,8], [2,4,6]           // Diagonais
+        ];
 
-        return p1
-
-        // check row win O
-        } else if (gameboard[0] == "O" && gameboard[1] == "O" && gameboard[2] == "O" ||
-            gameboard[3] == "O" && gameboard[4] == "O" && gameboard[5] == "O" ||
-            gameboard[6] == "O" && gameboard[7] == "O" && gameboard[8] == "O" ) {
-
-        return p2
-
-        // check column win X
-        } else if (gameboard[0] == "X" && gameboard[3] == "X" && gameboard[6] == "X" ||
-            gameboard[1] == "X" && gameboard[4] == "X" && gameboard[7] == "X" ||
-            gameboard[2] == "X" && gameboard[5] == "X" && gameboard[8] == "X" ) {
-
-        return p1
-
-        // check column win O
-        } else if (gameboard[0] == "O" && gameboard[3] == "O" && gameboard[6] == "O" ||
-            gameboard[1] == "O" && gameboard[4] == "O" && gameboard[7] == "O" ||
-            gameboard[2] == "O" && gameboard[5] == "O" && gameboard[8] == "O" ) {
-
-        return p2
-
-        // check diagonal win X
-        } else if (gameboard[0] == "X" && gameboard[4] == "X" && gameboard[8] == "X" ||
-                   gameboard[2] == "X" && gameboard[4] == "X" && gameboard[6] == "X" ) {
-            
-        return p1
-
-        // check diagonal win O
-        } else if (gameboard[0] == "O" && gameboard[4] == "O" && gameboard[8] == "O" ||
-                   gameboard[2] == "O" && gameboard[4] == "O" && gameboard[6] == "O" ) {
-
-        return p2
-        } else {
-            return null
+        for (let combo of wins) {
+            const [a, b, c] = combo;
+            if (gameboard[a] !== " " && 
+                gameboard[a] === gameboard[b] && 
+                gameboard[a] === gameboard[c]) {
+                return activePlayer; // Retorna o jogador atual (que acabou de jogar)
+            }
         }
+        return null;
 
     }
 
@@ -70,83 +53,68 @@ const GameController = (function() {
             if (gameboard[i] == " ") return false
         }
 
+        ScreenController.displayMessage("It's a Tie!")
+
         return true
     }
 
-    const playP1 = (index) => {
 
-        if (gameboard[index] !== " ") {
-            return false
-        }
-
-        gameboard[index] = "X"
-
-        return true
-
-    }
-
-    const playP2 = (index) => {
-
-        if (gameboard[index] !== " ") {
-            return false
-        }
-
-        gameboard[index] = "O"
-        return true
-
-    }
-
-    const playGame = (p1, p2) => {
+    const playRound = (index) => {
         
-        console.log("Game started")
-        displayBoard()
 
-        while(true) {
-
-            if(isBoardFull()) return
-
-            let p1choice = Math.floor(Math.random() * 9)
-            playP1(p1choice)
-            displayBoard()
-            
-            let winner = checkWin(p1, p2)
-
-            if (winner) {
-                console.log(`Parabéns ${winner.name}`)
-                return checkWin
-            }
-
-            if(isBoardFull()) return
-
-            let p2choice = Math.floor(Math.random() * 9)
-            playP2(p2choice)
-            displayBoard()
-            
-            winner = checkWin(p1, p2)
-
-            if (winner) {
-                console.log(`Parabéns ${winner.name}`)
-                return checkWin
-            }
-
-
-            
+        if (gameboard[index] !== " ") {
+            return
         }
+
+        if (activePlayer.name == p1.name) {
+            gameboard[index] = "X"
+        } else if (activePlayer.name == p2.name) {
+            gameboard[index] = "O"
+        }
+        
+        ScreenController.updateScreen()
+
+        const winner = checkWin();
+        if (winner) {
+            ScreenController.displayMessage(`Congratulations! ${winner.name} won!`);
+            ScreenController.removePlayHability()
+            return;
+        }
+
+        if (isBoardFull()) {
+            ScreenController.displayMessage("Draw!");
+            return;
+        }
+
+
+        if(activePlayer == p1)
+            activePlayer = p2
+        else 
+            activePlayer = p1
+
+        ScreenController.displayMessage(`${activePlayer.name} turn!`)
+
+        return true
+
+
+        
     }
 
-    return {gameboard, displayBoard, playGame, checkWin, playP1, playP2}
+    return {gameboard, playRound}
 })();
 
 const ScreenController = (function () {
 
-    let P1Name = "p1_default"
-    let P2Name = "p2_default"
+    p1.name = "p1_default"
+    p2.name = "p2_default"
 
 
     const PlayerNamesForm = document.getElementById('name-form')
-    const Result = document.getElementById('results') 
+    const Message = document.getElementById('message') 
     const Board = document.getElementById('board')
+    const ResetButton = document.getElementById('reset-button')
     let BoardSquares = document.getElementsByClassName('board-square')
+
 
     if (PlayerNamesForm) {
 
@@ -155,45 +123,80 @@ const ScreenController = (function () {
     
             const formData = new FormData(e.target)
             
-            P1Name = formData.get('P1Name') || P1Name
-            P2Name = formData.get('P2Name') || P2Name
+            p1.name = formData.get('P1Name') || p1.name
+            p2.name = formData.get('P2Name') || p2.name
 
             Board.hidden = false
+            ResetButton.hidden = false
+
+            updateScreen()
         })
 
     }
 
+    if (ResetButton) {
+        ResetButton.addEventListener('click', () => {
+
+            for(let i = 0; i < GameController.gameboard.length; i++) {
+                GameController.gameboard[i] = " "
+            }
+            ScreenController.updateScreen()
+            GameController.activePlayer = p1
+
+        })
+    }
+
     const updateScreen = () => {
 
-        for(let i = 0; i < gameboard.length; i++) {
+        const currentBoard = GameController.gameboard
 
-            BoardSquares[i].textContent = gameboard[i]
+        for(let i = 0; i < currentBoard.length; i++) {
+
+            BoardSquares[i].textContent = currentBoard[i]
         }
 
     }
 
-    const showResults = () => {
+    const removePlayHability = () => {
+        Board.removeEventListener('click', clickHandlerBoard)
+    }
 
+    const clickHandlerBoard = (e) => {
+
+        const selectedSquare = e.target
+
+        if (!selectedSquare.id || selectedSquare.id === "board") return
+
+        const index = Number(selectedSquare.id)
+
+
+        if (GameController.gameboard[index] !== " ") 
+            return
+        else 
+            GameController.playRound(index)
+        
+
+    }
+
+    Board.addEventListener('click', clickHandlerBoard)
+
+
+    const displayMessage = (message) => {
+
+        Message.textContent = ""
+        Message.textContent = message
         
     }
 
-    const getPlayerNames = () => {
-
-        return {p1: P1Name, p2: P2Name}
-    }
-
-    return {initialize}
+    return {updateScreen, displayMessage, removePlayHability}
 })();
 
-function Player(name) {
 
-    return {name}
-}
 
-const p1 = Player("luis")
-const p2 = Player("manuel")
 
-GameController.playGame(p1, p2)
+ScreenController.updateScreen()
+
+
 
 
 

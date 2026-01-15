@@ -44,6 +44,7 @@ body {
 
 }
 
+
 #name-form > button[type="submit"] {
 
     border: 0;
@@ -104,11 +105,22 @@ body {
 
     background-color: #927b7b;
     color: rgb(255, 0, 0);
-
+    
 
     font-size: 7rem;
 }
 
+#reset-button {
+    border: 0;
+    border-radius: 5px;
+    background-color: rgb(126, 94, 77);
+    padding: 10px 15px;
+
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: large;
+}
+
 [hidden] {
     display: none !important;
-  }
+}
+
